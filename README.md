@@ -1,4 +1,6 @@
-# Smart Traffic PERT \& Gantt Planner (DevSecOps Micro Project)Author: Zil Nagda 
+# Smart Traffic PERT \& Gantt Planner (DevSecOps Micro Project)
+
+Author: Zil Nagda 
 
 A web-based planner for the *Smart Traffic Management Application* project. Enter activities with
 optimistic / most likely / pessimistic times and predecessors; the site calculates PERT values,
