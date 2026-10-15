@@ -1,0 +1,14 @@
+node_modules/
+reports/
+.scannerwork/
+# Terraform: never commit state or variable files with real values
+.terraform/
+*.tfstate
+*.tfstate.*
+terraform.tfvars
+*.auto.tfvars
+crash.log
+# Secrets
+*.pem
+*.key
+.env

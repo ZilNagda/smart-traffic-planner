@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Smart Traffic App - PERT &amp; Gantt Planner</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="w">
+  <h1>Smart Traffic Management App - PERT &amp; Gantt Planner</h1>
+  <p class="s">SDG 11 (primary) &middot; SDG 9 (secondary). Edit times or add activities; everything recalculates. Units: weeks.</p>
+
+  <section class="c">
+    <h2>1. Activities (O = optimistic, M = most likely, P = pessimistic)</h2>
+    <div class="sc">
+      <table>
+        <thead><tr><th>ID</th><th>Activity</th><th>Predecessors</th><th>O</th><th>M</th><th>P</th><th>te</th><th>Var</th><th>ES</th><th>EF</th><th>LS</th><th>LF</th><th>Slack</th><th></th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+    <p><button id="addBtn" type="button">+ Add activity</button><button id="resetBtn" type="button" class="g">Reset sample data</button></p>
+    <div class="er" id="er" role="alert"></div>
+  </section>
+
+  <section class="c">
+    <h2>2. Results</h2>
+    <div class="k">
+      <div><b id="dur">-</b><span>Expected duration (weeks)</span></div>
+      <div><b id="sd">-</b><span>Std deviation (weeks)</span></div>
+      <div><b id="cp" class="small">-</b><span>Critical path</span></div>
+      <div><b id="pr">-</b><span>P(finish by target)</span></div>
+    </div>
+    <p>Target deadline (weeks): <input class="n" id="tg" type="number" value="21" step="0.5"> <span class="lg">Z = (target - duration) / sigma</span></p>
+    <p class="lg" id="zt"></p>
+  </section>
+
+  <section class="c"><h2>3. Gantt chart (red = critical)</h2><div id="gantt"></div></section>
+  <section class="c"><h2>4. PERT network (red = critical path)</h2><div class="sc" id="pert"></div></section>
+</div>
+<script src="js/pert-core.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+{
+  "name": "smart-traffic-planner",
+  "version": "1.0.0",
+  "description": "PERT & Gantt planner for a Smart Traffic Management Application (DevSecOps micro project)",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "test": "node --test tests/*.test.js"
+  }
+}
