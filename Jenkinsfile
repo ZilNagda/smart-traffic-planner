@@ -16,9 +16,9 @@ pipeline {
 
     environment {
         // TODO: replace these three values before running
-        AWS_ACCOUNT_ID = 'YOUR_AWS_ACCOUNT_ID'
-        AWS_REGION     = 'ap-south-1'
-        EC2_HOST       = 'YOUR_EC2_PUBLIC_IP'
+        AWS_ACCOUNT_ID = '904854373740'
+        AWS_REGION     = 'ap-southeast-2'
+        EC2_HOST       = '15.135.75.158'
 
         ECR_REGISTRY   = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
         IMAGE_NAME     = "${ECR_REGISTRY}/smart-traffic-planner"
