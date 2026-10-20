@@ -53,72 +53,80 @@ pipeline {
             }
         }
 
-       stage('Quality Gate') {
+      
+
+stage('Quality Gate') {
     steps {
         timeout(time: 5, unit: 'MINUTES') {
             script {
-                def taskFile = readFile('.scannerwork/report-task.txt')
-                def taskUrl = taskFile.readLines()
-                    .find { it.startsWith('ceTaskUrl=') }
-                    ?.substring('ceTaskUrl='.length())
+                def taskUrl = sh(
+                    script: "grep '^ceTaskUrl=' .scannerwork/report-task.txt | cut -d= -f2-",
+                    returnStdout: true
+                ).trim()
 
                 if (!taskUrl) {
                     error('SonarQube task URL not found')
                 }
 
-                def result = null
-                for (int i = 0; i < 30; i++) {
-                    withCredentials([
-                        string(credentialsId: 'sonar-token',
-                               variable: 'SONAR_TOKEN')
-                    ]) {
-                        result = sh(
-                            script: """curl -sS -u "\$SONAR_TOKEN:" "${taskUrl}" """,
+                withCredentials([
+                    string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')
+                ]) {
+                    def status = 'PENDING'
+                    def analysisId = ''
+
+                    withEnv(["TASK_URL=${taskUrl}"]) {
+                        for (int i = 0; i < 25; i++) {
+                            def taskJson = sh(
+                                script: 'curl -fsS -u "$SONAR_TOKEN:" "$TASK_URL"',
+                                returnStdout: true
+                            ).trim()
+
+                            writeFile file: 'sonar-task.json', text: taskJson
+
+                            status = sh(
+                                script: "jq -r '.task.status' sonar-task.json",
+                                returnStdout: true
+                            ).trim()
+
+                            if (status == 'SUCCESS') {
+                                analysisId = sh(
+                                    script: "jq -r '.task.analysisId' sonar-task.json",
+                                    returnStdout: true
+                                ).trim()
+                                break
+                            }
+
+                            if (status == 'FAILED' || status == 'CANCELED') {
+                                error("SonarQube analysis ${status}")
+                            }
+
+                            sleep time: 10, unit: 'SECONDS'
+                        }
+                    }
+
+                    if (status != 'SUCCESS' || !analysisId || analysisId == 'null') {
+                        error('SonarQube analysis timed out or returned no analysis ID')
+                    }
+
+                    withEnv(["ANALYSIS_ID=${analysisId}"]) {
+                        def gateStatus = sh(
+                            script: 'curl -fsS -u "$SONAR_TOKEN:" "http://localhost:9000/api/qualitygates/project_status?analysisId=$ANALYSIS_ID" | jq -r ".projectStatus.status"',
                             returnStdout: true
                         ).trim()
-                    }
 
-                    def task = new JsonSlurperClassic().parseText(result)
-                    def status = task.task.status
+                        echo "SonarQube Quality Gate: ${gateStatus}"
 
-                    if (status == 'SUCCESS') {
-                        break
-                    }
-                    if (status == 'FAILED' || status == 'CANCELED') {
-                        error("SonarQube analysis ${status}")
-                    }
-
-                    sleep time: 10, unit: 'SECONDS'
-                }
-
-                def task = new JsonSlurperClassic().parseText(result)
-                if (task.task.status != 'SUCCESS') {
-                    error('SonarQube analysis timed out')
-                }
-
-                def analysisId = task.task.analysisId
-                withCredentials([
-                    string(credentialsId: 'sonar-token',
-                           variable: 'SONAR_TOKEN')
-                ]) {
-                    def gate = sh(
-                        script: """curl -sS -u "\$SONAR_TOKEN:" "http://localhost:9000/api/qualitygates/project_status?analysisId=${analysisId}" """,
-                        returnStdout: true
-                    ).trim()
-
-                    def gateData = new JsonSlurperClassic().parseText(gate)
-                    def gateStatus = gateData.projectStatus.status
-
-                    echo "SonarQube Quality Gate: ${gateStatus}"
-
-                    if (gateStatus != 'OK') {
-                        error("Quality Gate failed: ${gateStatus}")
+                        if (gateStatus != 'OK') {
+                            error("Quality Gate failed: ${gateStatus}")
+                        }
                     }
                 }
             }
         }
     }
 }
+
+
 
         stage('Trivy: Source, Dependencies and Terraform') {
             steps {
