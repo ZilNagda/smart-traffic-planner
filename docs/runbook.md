@@ -61,17 +61,17 @@ Check it: `ssh -i YOUR_KEY.pem ubuntu@PUBLIC_IP` then `docker --version` (SS).
 
 ## Step 6. Push the image to ECR  (SS: ECR console showing the image)
 ```bash
-aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin ACCOUNT_ID.dkr.ecr.ap-south-1.amazonaws.com
-docker tag smart-traffic-planner:latest ACCOUNT_ID.dkr.ecr.ap-south-1.amazonaws.com/smart-traffic-planner:latest
-docker push ACCOUNT_ID.dkr.ecr.ap-south-1.amazonaws.com/smart-traffic-planner:latest
+aws ecr get-login-password --region ap-southeast-2 | docker login --username AWS --password-stdin ACCOUNT_ID.dkr.ecr.ap-southeast-2.amazonaws.com
+docker tag smart-traffic-planner:latest ACCOUNT_ID.dkr.ecr.ap-southeast-2.amazonaws.com/smart-traffic-planner:latest
+docker push ACCOUNT_ID.dkr.ecr.ap-southeast-2.amazonaws.com/smart-traffic-planner:latest
 ```
 
 ## Step 7. Run the ECR image with Docker CLI on the EC2 machine  (SS: docker ps on the server)
 On the server (after `ssh`):
 ```bash
-aws ecr get-login-password --region ap-south-1 | sudo docker login --username AWS --password-stdin ACCOUNT_ID.dkr.ecr.ap-south-1.amazonaws.com
-sudo docker pull ACCOUNT_ID.dkr.ecr.ap-south-1.amazonaws.com/smart-traffic-planner:latest
-sudo docker run -d --name planner --restart unless-stopped -p 80:8080 ACCOUNT_ID.dkr.ecr.ap-south-1.amazonaws.com/smart-traffic-planner:latest
+aws ecr get-login-password --region ap-southeast-2 | sudo docker login --username AWS --password-stdin ACCOUNT_ID.dkr.ecr.ap-southeast-2.amazonaws.com
+sudo docker pull ACCOUNT_ID.dkr.ecr.ap-southeast-2.amazonaws.com/smart-traffic-planner:latest
+sudo docker run -d --name planner --restart unless-stopped -p 80:8080 ACCOUNT_ID.dkr.ecr.ap-southeast-2.amazonaws.com/smart-traffic-planner:latest
 sudo docker ps
 ```
 The EC2 role (created by Terraform) lets the server pull from ECR without access keys.
