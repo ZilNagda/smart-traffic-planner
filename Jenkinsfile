@@ -1,3 +1,4 @@
+import groovy.json.JsonSlurperClassic
 pipeline {
     agent any
 
@@ -77,7 +78,7 @@ pipeline {
                         ).trim()
                     }
 
-                    def task = readJSON text: result
+                    def task = new JsonSlurperClassic().parseText(result)
                     def status = task.task.status
 
                     if (status == 'SUCCESS') {
@@ -90,7 +91,7 @@ pipeline {
                     sleep time: 10, unit: 'SECONDS'
                 }
 
-                def task = readJSON text: result
+                def task = new JsonSlurperClassic().parseText(result)
                 if (task.task.status != 'SUCCESS') {
                     error('SonarQube analysis timed out')
                 }
@@ -105,7 +106,7 @@ pipeline {
                         returnStdout: true
                     ).trim()
 
-                    def gateData = readJSON text: gate
+                    def gateData = new JsonSlurperClassic().parseText(gate)
                     def gateStatus = gateData.projectStatus.status
 
                     echo "SonarQube Quality Gate: ${gateStatus}"
