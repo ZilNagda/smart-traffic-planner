@@ -45,9 +45,10 @@ pipeline {
             }
             steps {
                 withSonarQubeEnv('sonarqube') {
-                    sh "${scannerHome}/bin/sonar-scanner"
+                    withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
+                        sh "${scannerHome}/bin/sonar-scanner"
+                    }
                 }
-            }
         }
 
         stage('Quality Gate') {
