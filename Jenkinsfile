@@ -118,9 +118,6 @@ pipeline {
         }
     }
 }
-                }
-            }
-        }
 
         stage('Trivy: Source, Dependencies and Terraform') {
             steps {
