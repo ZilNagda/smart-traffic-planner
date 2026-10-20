@@ -52,10 +52,72 @@ pipeline {
             }
         }
 
-        stage('Quality Gate') {
-            steps {
-                timeout(time: 5, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: true
+       stage('Quality Gate') {
+    steps {
+        timeout(time: 5, unit: 'MINUTES') {
+            script {
+                def taskFile = readFile('.scannerwork/report-task.txt')
+                def taskUrl = taskFile.readLines()
+                    .find { it.startsWith('ceTaskUrl=') }
+                    ?.substring('ceTaskUrl='.length())
+
+                if (!taskUrl) {
+                    error('SonarQube task URL not found')
+                }
+
+                def result = null
+                for (int i = 0; i < 30; i++) {
+                    withCredentials([
+                        string(credentialsId: 'sonar-token',
+                               variable: 'SONAR_TOKEN')
+                    ]) {
+                        result = sh(
+                            script: """curl -sS -u "\$SONAR_TOKEN:" "${taskUrl}" """,
+                            returnStdout: true
+                        ).trim()
+                    }
+
+                    def task = readJSON text: result
+                    def status = task.task.status
+
+                    if (status == 'SUCCESS') {
+                        break
+                    }
+                    if (status == 'FAILED' || status == 'CANCELED') {
+                        error("SonarQube analysis ${status}")
+                    }
+
+                    sleep time: 10, unit: 'SECONDS'
+                }
+
+                def task = readJSON text: result
+                if (task.task.status != 'SUCCESS') {
+                    error('SonarQube analysis timed out')
+                }
+
+                def analysisId = task.task.analysisId
+                withCredentials([
+                    string(credentialsId: 'sonar-token',
+                           variable: 'SONAR_TOKEN')
+                ]) {
+                    def gate = sh(
+                        script: """curl -sS -u "\$SONAR_TOKEN:" "http://localhost:9000/api/qualitygates/project_status?analysisId=${analysisId}" """,
+                        returnStdout: true
+                    ).trim()
+
+                    def gateData = readJSON text: gate
+                    def gateStatus = gateData.projectStatus.status
+
+                    echo "SonarQube Quality Gate: ${gateStatus}"
+
+                    if (gateStatus != 'OK') {
+                        error("Quality Gate failed: ${gateStatus}")
+                    }
+                }
+            }
+        }
+    }
+}
                 }
             }
         }
