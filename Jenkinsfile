@@ -165,21 +165,38 @@ stage('Quality Gate') {
             }
         }
 
+       
         stage('Deploy to Ubuntu EC2') {
             when { expression { params.DEPLOY_TO_EC2 } }
             steps {
-                sshagent(credentials: ['ec2-ssh-key']) {
-                    sh '''
-                        ssh -o StrictHostKeyChecking=accept-new ubuntu@${EC2_HOST} "
-                            aws ecr get-login-password --region ${AWS_REGION} | sudo docker login --username AWS --password-stdin ${ECR_REGISTRY} &&
-                            sudo docker pull ${IMAGE_NAME}:${IMAGE_TAG} &&
-                            (sudo docker rm -f planner || true) &&
-                            sudo docker run -d --name planner --restart unless-stopped -p 80:8080 ${IMAGE_NAME}:${IMAGE_TAG}
-                        "
-                    '''
+                script {
+                    try {
+                        sshagent(credentials: ['ec2-ssh-key']) {
+                            sh '''
+                                set -eu
+                                echo "Checking SSH connection to EC2..."
+                                ssh -vv -o BatchMode=yes \
+                                    -o ConnectTimeout=15 \
+                                    -o StrictHostKeyChecking=accept-new \
+                                    ubuntu@${EC2_HOST} "
+                                        set -e
+                                        aws ecr get-login-password --region ${AWS_REGION} |
+                                            sudo docker login --username AWS --password-stdin ${ECR_REGISTRY}
+                                        sudo docker pull ${IMAGE_NAME}:${IMAGE_TAG}
+                                        (sudo docker rm -f planner || true)
+                                        sudo docker run -d --name planner --restart unless-stopped -p 80:8080 ${IMAGE_NAME}:${IMAGE_TAG}
+                                    "
+                            '''
+                        }
+                    } catch (Exception e) {
+                        echo "DEPLOYMENT ERROR TYPE: ${e.getClass().getName()}"
+                        echo "DEPLOYMENT ERROR MESSAGE: ${e.getMessage()}"
+                        throw e
+                    }
                 }
             }
         }
+
 
         stage('Smoke Test') {
             when { expression { params.DEPLOY_TO_EC2 } }
