@@ -34,3 +34,9 @@ docker run -d -p 8080:8080 smart-traffic-planner
 No credentials are stored in this repository. Jenkins credentials, AWS keys and `terraform.tfvars`
 are kept outside Git (see `.gitignore`).
 
+## 🎥 Project Demo Video
+
+Watch the demo of the Smart Traffic PERT & Gantt Planner:
+
+[Click here to watch the demo video](https://lnkd.in/p/dv-TGs-T )
+
