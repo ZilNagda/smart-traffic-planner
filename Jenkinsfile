@@ -167,35 +167,34 @@ stage('Quality Gate') {
 
        
         stage('Deploy to Ubuntu EC2') {
-            when { expression { params.DEPLOY_TO_EC2 } }
-            steps {
-                script {
-                    try {
-                        sshagent(credentials: ['ec2-ssh-key-new']) {
-                            sh '''
-                                set -eu
-                                echo "Checking SSH connection to EC2..."
-                                ssh -vv -o BatchMode=yes \
-                                    -o ConnectTimeout=15 \
-                                    -o StrictHostKeyChecking=accept-new \
-                                    ubuntu@${EC2_HOST} "
-                                        set -e
-                                        aws ecr get-login-password --region ${AWS_REGION} |
-                                            sudo docker login --username AWS --password-stdin ${ECR_REGISTRY}
-                                        sudo docker pull ${IMAGE_NAME}:${IMAGE_TAG}
-                                        (sudo docker rm -f planner || true)
-                                        sudo docker run -d --name planner --restart unless-stopped -p 80:8080 ${IMAGE_NAME}:${IMAGE_TAG}
-                                    "
-                            '''
-                        }
-                    } catch (Exception e) {
-                        echo "DEPLOYMENT ERROR TYPE: ${e.getClass().getName()}"
-                        echo "DEPLOYMENT ERROR MESSAGE: ${e.getMessage()}"
-                        throw e
-                    }
-                }
-            }
+    when {
+        expression { params.DEPLOY_TO_EC2 }
+    }
+    steps {
+        withCredentials([
+            file(credentialsId: 'ec2-ssh-key-file', variable: 'SSH_KEY')
+        ]) {
+            sh '''
+                set -eu
+                chmod 600 "$SSH_KEY"
+
+                ssh -i "$SSH_KEY" \
+                    -o IdentitiesOnly=yes \
+                    -o BatchMode=yes \
+                    -o ConnectTimeout=15 \
+                    -o StrictHostKeyChecking=accept-new \
+                    ubuntu@${EC2_HOST} "
+                        set -e
+                        aws ecr get-login-password --region ${AWS_REGION} |
+                            sudo docker login --username AWS --password-stdin ${ECR_REGISTRY}
+                        sudo docker pull ${IMAGE_NAME}:${IMAGE_TAG}
+                        (sudo docker rm -f planner || true)
+                        sudo docker run -d --name planner --restart unless-stopped -p 80:8080 ${IMAGE_NAME}:${IMAGE_TAG}
+                    "
+            '''
         }
+    }
+}
 
 
         stage('Smoke Test') {
