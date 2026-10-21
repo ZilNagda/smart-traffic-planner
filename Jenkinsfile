@@ -165,7 +165,19 @@ stage('Quality Gate') {
             }
         }
 
-       
+       stage('Check Jenkins Network') {
+    steps {
+        sh '''
+            echo "Jenkins outbound IP:"
+            curl -s --max-time 10 https://checkip.amazonaws.com
+            echo
+            echo "Testing EC2 SSH port:"
+            timeout 10 bash -c '</dev/tcp/${EC2_HOST}/22' \
+                && echo "Port 22 reachable" \
+                || echo "Port 22 unreachable"
+        '''
+    }
+}
         stage('Deploy to Ubuntu EC2') {
     when {
         expression { params.DEPLOY_TO_EC2 }
