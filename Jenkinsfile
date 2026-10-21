@@ -171,7 +171,7 @@ stage('Quality Gate') {
             steps {
                 script {
                     try {
-                        sshagent(credentials: ['ec2-ssh-key']) {
+                        sshagent(credentials: ['ec2-ssh-key-new']) {
                             sh '''
                                 set -eu
                                 echo "Checking SSH connection to EC2..."
